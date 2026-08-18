@@ -80,7 +80,11 @@ func (t *Template) UnmarshalJSON(buf []byte) error {
 		case map[string]interface{}:
 			query, ok := v[targetTypeQuery]
 			if ok {
-				t.Query = query.(string)
+				queryStr, ok := query.(string)
+				if !ok {
+					return fmt.Errorf("invalid type for field 'query': %v", query)
+				}
+				t.Query = queryStr
 			}
 		default:
 			return fmt.Errorf("invalid type for field 'query': %v", v)
@@ -105,7 +109,15 @@ func (raw *RawTemplateValue) Get() (TemplateValue, error) {
 		case string:
 			t.Text = txt.(string)
 		case []interface{}:
-			t.Text = txt.([]interface{})[0].(string)
+			arr, ok := txt.([]interface{})
+			if len(arr) == 0 {
+				return t, fmt.Errorf("invalid type for field 'text': empty array")
+			}
+			str, ok := arr[0].(string)
+			if !ok {
+				return t, fmt.Errorf("invalid type for field 'text': %v", arr[0])
+			}
+			t.Text = str
 		default:
 			return t, fmt.Errorf("invalid type for field 'text': %v", tt)
 		}
@@ -117,7 +129,15 @@ func (raw *RawTemplateValue) Get() (TemplateValue, error) {
 		case string:
 			t.Value = val.(string)
 		case []interface{}:
-			t.Value = val.([]interface{})[0].(string)
+			arr, ok := val.([]interface{})
+			if len(arr) == 0 {
+				return t, fmt.Errorf("invalid type for field 'value': empty array")
+			}
+			str, ok := arr[0].(string)
+			if !ok {
+				return t, fmt.Errorf("invalid type for field 'value': %v", arr[0])
+			}
+			t.Value = str
 		default:
 			return t, fmt.Errorf("invalid type for field 'value': %v", vt)
 		}
@@ -176,7 +196,7 @@ type Target struct {
 	Expr       string      `json:"expr,omitempty"`
 	PanelId    int         `json:"panelId,omitempty"`
 	RefId      string      `json:"refId,omitempty"`
-	Hide       bool        `json:"hide"`
+	Hide       bool        `json:"hide,omitempty"`
 }
 
 func (t *Target) GetDataSource() (Datasource, error) {
@@ -222,10 +242,9 @@ type OverrideProperty struct {
 
 // oversimplified Reduce options
 type ReduceOptions struct {
-	Fields string   `json:"fields,omitempty"`
-	Calcs  []string `json:"[]calcs,omitempty"`
-	Values bool     `json:"values,omitempty"`
-	Limit  int      `json:"limit,omitempty"`
+	Fields string `json:"fields,omitempty"`
+	Values bool   `json:"values,omitempty"`
+	Limit  int    `json:"limit,omitempty"`
 }
 
 // Stat panel options is a deliberately incomplete representation of the stat panel options from grafana.
@@ -278,9 +297,12 @@ type Dashboard struct {
 	Annotations struct {
 		List []Annotation `json:"list"`
 	} `json:"annotations"`
-	Rows     []Row   `json:"rows,omitempty"`
-	Panels   []Panel `json:"panels,omitempty"`
-	Editable bool    `json:"editable,omitempty"`
+	Rows   []Row   `json:"rows,omitempty"`
+	Panels []Panel `json:"panels,omitempty"`
+	// Editable intentionally has no omitempty: autofix must be able to
+	// serialize the fixed value (false), otherwise it is dropped from the
+	// output and the original value survives any merge.
+	Editable bool `json:"editable"`
 
 	// Kubernetes shaped dashboards will include an APIVersion and Kind
 	APIVersion string `json:"apiVersion,omitempty"`
