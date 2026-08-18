@@ -109,7 +109,7 @@ func (raw *RawTemplateValue) Get() (TemplateValue, error) {
 		case string:
 			t.Text = txt.(string)
 		case []interface{}:
-			arr, ok := txt.([]interface{})
+			arr := txt.([]interface{})
 			if len(arr) == 0 {
 				return t, fmt.Errorf("invalid type for field 'text': empty array")
 			}
@@ -129,7 +129,7 @@ func (raw *RawTemplateValue) Get() (TemplateValue, error) {
 		case string:
 			t.Value = val.(string)
 		case []interface{}:
-			arr, ok := val.([]interface{})
+			arr := val.([]interface{})
 			if len(arr) == 0 {
 				return t, fmt.Errorf("invalid type for field 'value': empty array")
 			}
